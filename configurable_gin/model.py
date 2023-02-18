@@ -4,7 +4,7 @@ import torchvision
 import torch
 import torch.nn as nn
 from pytorch_lightning import LightningModule
-from typing import Tuple 
+from typing import Tuple, Dict 
 
 
 @gin.configurable
@@ -14,10 +14,8 @@ class GAN(LightningModule):
         generator: nn.Module,
         discriminator:  nn.Module,
         data_dims: Tuple,
+        optimizers: Dict[str, torch.optim.Optimizer],
         latent_dim: int = 100,
-        lr: float = 0.0002,
-        b1: float = 0.5,
-        b2: float = 0.999,
         batch_size: int = 16,
         **kwargs,
     ):
@@ -27,6 +25,8 @@ class GAN(LightningModule):
         # networks
         self.generator = generator(img_shape=data_dims) 
         self.discriminator = discriminator(img_shape=data_dims)
+
+        self.optimizers = optimizers
 
         self.validation_z = torch.randn(8, self.hparams.latent_dim)
 
@@ -88,12 +88,10 @@ class GAN(LightningModule):
         return F.binary_cross_entropy(y_hat, y)
 
     def configure_optimizers(self):
-        lr = self.hparams.lr
-        b1 = self.hparams.b1
-        b2 = self.hparams.b2
 
-        opt_g = torch.optim.Adam(self.generator.parameters(), lr=lr, betas=(b1, b2))
-        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=(b1, b2))
+        opt_g = self.optimizers['generator'](self.generator.parameters())
+        opt_d = self.optimizers['discriminator'](self.discriminator.parameters())
+        print(opt_g, opt_d)
         return [opt_g, opt_d], []
 
     def on_validation_epoch_end(self):

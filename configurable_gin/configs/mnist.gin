@@ -11,6 +11,17 @@ MNISTDataModule.num_workers = 64
 ### Model
 GAN.generator = @Generator1
 GAN.discriminator = @Discriminator
+GAN.optimizers = {
+    'generator': @generator/torch.optim.Adam, 'discriminator': @discriminator/torch.optim.Adam
+}
+
+generator/torch.optim.Adam.lr = 0.0002
+generator/torch.optim.Adam.betas = (0.5, 0.999) 
+
+discriminator/torch.optim.Adam.lr = 0.001
+discriminator/torch.optim.Adam.betas = (0.2, 0.999)
+
 
 Generator1.latent_dim = @latent_dim()
 Generator1.base_depth = 128
+
