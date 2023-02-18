@@ -23,6 +23,8 @@ def run_pipeline(
     data_module       
 ):
 
+    model = model(data_dims=data_module.dims)
+
     trainer = Trainer(
         accelerator="auto",
         devices=1 if torch.cuda.is_available() else None,  # limiting got iPython runs
