@@ -1,4 +1,3 @@
-
 import os
 import torch
 from data_module import MNISTDataModule

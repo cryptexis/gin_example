@@ -1,18 +1,19 @@
+import gin
 import torch.nn.functional as F
 import torchvision
 import torch
+import torch.nn as nn
 from pytorch_lightning import LightningModule
-from arch.discriminators.discriminator import Discriminator
-from arch.generators.generator import Generator
+from typing import Tuple 
 
 
-
+@gin.configurable
 class GAN(LightningModule):
     def __init__(
         self,
-        channels,
-        width,
-        height,
+        generator: nn.Module,
+        discriminator:  nn.Module,
+        data_dims: Tuple,
         latent_dim: int = 100,
         lr: float = 0.0002,
         b1: float = 0.5,
@@ -24,9 +25,8 @@ class GAN(LightningModule):
         self.save_hyperparameters()
 
         # networks
-        data_shape = (channels, width, height)
-        self.generator = Generator(latent_dim=self.hparams.latent_dim, img_shape=data_shape)
-        self.discriminator = Discriminator(img_shape=data_shape)
+        self.generator = generator(img_shape=data_dims) 
+        self.discriminator = discriminator(img_shape=data_dims)
 
         self.validation_z = torch.randn(8, self.hparams.latent_dim)
 
@@ -34,9 +34,6 @@ class GAN(LightningModule):
 
     def forward(self, z):
         return self.generator(z)
-
-    def adversarial_loss(self, y_hat, y):
-        return F.binary_cross_entropy(y_hat, y)
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         imgs, _ = batch
@@ -86,6 +83,9 @@ class GAN(LightningModule):
             d_loss = (real_loss + fake_loss) / 2
             self.log("d_loss", d_loss, prog_bar=True)
             return d_loss
+
+    def adversarial_loss(self, y_hat, y):
+        return F.binary_cross_entropy(y_hat, y)
 
     def configure_optimizers(self):
         lr = self.hparams.lr
